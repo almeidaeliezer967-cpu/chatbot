@@ -14,13 +14,15 @@ from langchain_community.chat_message_histories import StreamlitChatMessageHisto
 # Configuração da página
 st.set_page_config(page_title="ChatBot Personalizado", page_icon="🤖", layout="wide")
 
-# --- BARRA LATERAL: Configurações e Entradas ---
+# Versão da API fixada internamente para simplificar a interface
+API_VERSION = "2024-02-01"
+
+# --- BARRA LATERAL: Configurações e Entradas (Apenas os 3 campos solicitados) ---
 with st.sidebar:
-    st.header("⚙️ Configurações de Conexão Azure")
-    azure_api_key = st.text_input("Azure OpenAI API Key", type="password", help="Sua chave de API do Azure OpenAI")
+    st.header("⚙️ Configurações Azure / Foundry")
+    azure_api_key = st.text_input("Azure OpenAI API Key", type="password", help="Sua chave de API")
     azure_endpoint = st.text_input("Azure Endpoint", placeholder="https://seu-recurso.openai.azure.com/")
     azure_deployment = st.text_input("Nome do Deployment / Modelo", placeholder="gpt-4o ou gpt-35-turbo")
-    api_version = st.text_input("Versão da API", value="2024-02-01")
     
     st.markdown("---")
     st.header("🎭 Persona da IA")
@@ -54,16 +56,16 @@ msgs = StreamlitChatMessageHistory(key="langchain_messages")
 # --- PROCESSAMENTO DAS ENTRADAS E CONEXÃO ---
 if btn_iniciar:
     if not azure_api_key or not azure_endpoint or not azure_deployment:
-        st.error("Por favor, preencha todas as informações de conexão com a AZURE.")
+        st.error("Por favor, preencha a API Key, o Endpoint e o Nome do Deployment.")
     else:
         try:
             with st.spinner("Conectando ao modelo e processando arquivos..."):
-                # Inicializa LLM
+                # Inicializa LLM usando a versão fixa da API
                 st.session_state.llm = AzureChatOpenAI(
                     azure_endpoint=azure_endpoint,
                     azure_deployment=azure_deployment,
                     openai_api_key=azure_api_key,
-                    api_version=api_version,
+                    api_version=API_VERSION,
                     temperature=0.7
                 )
                 
@@ -96,7 +98,7 @@ if btn_iniciar:
                     embeddings = AzureOpenAIEmbeddings(
                         azure_endpoint=azure_endpoint,
                         openai_api_key=azure_api_key,
-                        api_version=api_version,
+                        api_version=API_VERSION,
                     )
                     st.session_state.vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
                     st.success("Arquivos RAG processados com sucesso!")
@@ -120,7 +122,7 @@ with col_btn:
         st.rerun()
 
 if not st.session_state.chat_ready:
-    st.info("👈 Insira os dados de conexão da Azure e clique em **Conectar e Inicializar Bot** no menu lateral para começar.")
+    st.info("👈 Insira os dados de conexão na barra lateral e clique em **Conectar e Inicializar Bot** para começar.")
 else:
     # Exibe o histórico de mensagens
     for msg in msgs.messages:
